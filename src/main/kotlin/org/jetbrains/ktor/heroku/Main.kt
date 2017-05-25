@@ -74,14 +74,12 @@ fun Application.module() {
 
         get("start") {
             setVar(1, "working")
-            call.respond("apply working")
-//            call.respondRedirect("/");
+            call.respondRedirect("/");
         }
 
         get("stop") {
             setVar(1, "stopped")
-            call.respond("apply stopped")
-//            call.respondRedirect("/");
+            call.respondRedirect("/");
         }
 
         get("status") {
@@ -93,24 +91,14 @@ fun Application.module() {
         }
 
         get("init") {
-            val id:Int = 1
-            val value:String="please work 3"
             val model = HashMap<String, Any>()
             dataSource.connection.use { connection ->
-                val rs = connection.createStatement().run {
+                connection.createStatement().run {
                     executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer, valuef text)")
-//                    executeUpdate("UPDATE keyvalue SET valuef='${value}' WHERE keyf=${id}")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
-                    executeQuery("SELECT * FROM keyvalue")
                 }
-                val output = ArrayList<String>()
-                while (rs.next()) {
-                    output.add("Read from DB: " + rs.getString("valuef"))
-                }
-                model.put("results", output)
             }
-            val etag = model.toString().hashCode().toString()
-            call.respond(FreeMarkerContent("db.ftl", model, etag, html_utf8))
+            call.respond("inited")
         }
     }
 }

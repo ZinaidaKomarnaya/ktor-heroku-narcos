@@ -95,8 +95,9 @@ fun Application.module() {
 fun setVar(key:String, value:String) {
     dataSource.connection.use { connection ->
         connection.createStatement().run {
+            executeUpdate("DROP TABLE vars")
             executeUpdate("CREATE TABLE IF NOT EXISTS vars (ke text, va text)")
-            executeUpdate("UPDATE INTO vars VALUES WHERE ke='${key}' ('${key}','${value}')")
+            executeUpdate("INSERT INTO vars VALUES ('${key}','${value}')")
         }
     }
 }

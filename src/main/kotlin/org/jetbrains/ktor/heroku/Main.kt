@@ -96,7 +96,7 @@ fun Application.module() {
                 val rs = connection.createStatement().run {
                     executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer, valuef text)")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
-                    executeQuery("UPDATE keyvalue valuef='please'")
+                    executeQuery("UPDATE keyvalue SET valuef='please'")
                     executeQuery("SELECT * FROM keyvalue")
                 }
                 val output = ArrayList<String>()
@@ -122,7 +122,7 @@ fun setVar(key: Int, value: String) {
 fun getVar(key: Int): String? {
     dataSource.connection.use { connection ->
         val rs = connection.createStatement().run {
-            executeQuery("SELECT * FROM keyvalue WHERE keyf=${key}")
+            executeQuery("SELECT * FROM keyvalue WHERE keyf = ${key}")
         }
         while (rs.next()) {
             return rs.getString("valuef")

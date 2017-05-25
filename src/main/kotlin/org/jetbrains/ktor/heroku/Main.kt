@@ -57,7 +57,7 @@ fun Application.module() {
 
         get("/") {
             val model = HashMap<String, Any>()
-            if(true /*&& getVar("status") == "working"*/) {
+            if(getVar(1) == "working") {
                 model.put("image", "working.jpg")
                 model.put("button", "stop.png")
                 model.put("href", "stop")
@@ -73,43 +73,51 @@ fun Application.module() {
         }
 
         get("start") {
-            setVar("status", "working")
+            setVar(1, "working")
             call.respondRedirect("/", true);
         }
 
         get("stop") {
-            setVar("status", "stopped")
+            setVar(1, "stopped")
             call.respondRedirect("/", true);
         }
 
         get("status") {
-            if(getVar("status") == "working") {
+            if(getVar(1) == "working") {
                 call.respond("working")
             } else {
                 call.respond("stopped")
             }
         }
-    }
-}
 
-fun setVar(key:String, value:String) {
-    dataSource.connection.use { connection ->
-        connection.createStatement().run {
-//            executeUpdate("DROP TABLE IF EXISTS keyvalue")
-            executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf text, varf text)")
-            executeUpdate("INSERT INTO keyvalue VALUES ('${key}','${value}')")
+        get("init") {
+            dataSource.connection.use { connection ->
+                connection.createStatement().run {
+                    executeUpdate("DROP TABLE IF EXISTS keyvalue")
+                    executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer PRIMARY KEY, valuef text)")
+                    executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
+                }
+            }
         }
     }
 }
 
-fun getVar(key:String):String? {
+fun setVar(key:Int, value:String) {
+    dataSource.connection.use { connection ->
+        connection.createStatement().run {
+            executeUpdate("UPDATE keyvalue SET valuef = '${value}' WHERE keyf = ${key};")
+        }
+    }
+}
+
+fun getVar(key:Int):String? {
     try {
         dataSource.connection.use { connection ->
             val rs = connection.createStatement().run {
-                executeQuery("SELECT * FROM keyvalue WHERE keyf='${key}'")
+                executeQuery("SELECT * FROM keyvalue WHERE keyf=${key}")
             }
             while (rs.next()) {
-                return rs.getString("varf")
+                return rs.getString("valuef")
             }
         }
     } catch (e:Throwable) {

@@ -91,13 +91,22 @@ fun Application.module() {
         }
 
         get("init") {
+            val model = HashMap<String, Any>()
             dataSource.connection.use { connection ->
-                connection.createStatement().run {
+                val rs = connection.createStatement().run {
                     executeUpdate("DROP TABLE IF EXISTS keyvalue")
                     executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer PRIMARY KEY, valuef text)")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
+                    executeQuery("SELECT * FROM keyvalue")
                 }
+                val output = ArrayList<String>()
+                while (rs.next()) {
+                    output.add("Read from DB: " + rs.getString("valuef"))
+                }
+                model.put("results", output)
             }
+            val etag = model.toString().hashCode().toString()
+            call.respond(FreeMarkerContent("db.ftl", model, etag, html_utf8))
         }
     }
 }

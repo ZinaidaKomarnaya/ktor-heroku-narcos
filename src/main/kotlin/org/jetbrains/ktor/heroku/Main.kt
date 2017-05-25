@@ -74,12 +74,14 @@ fun Application.module() {
 
         get("start") {
             setVar(1, "working")
-            call.respondRedirect("/", true);
+            call.respond("apply working")
+//            call.respondRedirect("/");
         }
 
         get("stop") {
             setVar(1, "stopped")
-            call.respondRedirect("/", true);
+            call.respond("apply stopped")
+//            call.respondRedirect("/");
         }
 
         get("status") {
@@ -97,7 +99,7 @@ fun Application.module() {
             dataSource.connection.use { connection ->
                 val rs = connection.createStatement().run {
                     executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer, valuef text)")
-                    executeUpdate("UPDATE keyvalue SET valuef='${value}' WHERE keyf=${id}")
+//                    executeUpdate("UPDATE keyvalue SET valuef='${value}' WHERE keyf=${id}")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
                     executeQuery("SELECT * FROM keyvalue")
                 }

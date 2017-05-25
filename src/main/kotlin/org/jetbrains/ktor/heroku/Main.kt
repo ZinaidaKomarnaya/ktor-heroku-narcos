@@ -57,7 +57,7 @@ fun Application.module() {
 
         get("/") {
             val model = HashMap<String, Any>()
-            if(getVar(1) == "working") {
+            if (getVar(1) == "working") {
                 model.put("image", "working.jpg")
                 model.put("button", "stop.png")
                 model.put("href", "stop")
@@ -83,7 +83,7 @@ fun Application.module() {
         }
 
         get("status") {
-            if(getVar(1) == "working") {
+            if (getVar(1) == "working") {
                 call.respond("working")
             } else {
                 call.respond("stopped")
@@ -95,7 +95,7 @@ fun Application.module() {
             dataSource.connection.use { connection ->
                 val rs = connection.createStatement().run {
                     executeUpdate("DROP TABLE IF EXISTS keyvalue")
-                    executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer PRIMARY KEY, valuef text)")
+                    executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer, valuef text)")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
                     executeQuery("SELECT * FROM keyvalue")
                 }
@@ -111,7 +111,7 @@ fun Application.module() {
     }
 }
 
-fun setVar(key:Int, value:String) {
+fun setVar(key: Int, value: String) {
     dataSource.connection.use { connection ->
         connection.createStatement().run {
             executeUpdate("UPDATE keyvalue SET valuef = '${value}' WHERE keyf = ${key};")
@@ -119,27 +119,23 @@ fun setVar(key:Int, value:String) {
     }
 }
 
-fun getVar(key:Int):String? {
-    try {
-        dataSource.connection.use { connection ->
-            val rs = connection.createStatement().run {
-                executeQuery("SELECT * FROM keyvalue WHERE keyf=${key}")
-            }
-            while (rs.next()) {
-                return rs.getString("valuef")
-            }
+fun getVar(key: Int): String? {
+    dataSource.connection.use { connection ->
+        val rs = connection.createStatement().run {
+            executeQuery("SELECT * FROM keyvalue WHERE keyf=${key}")
         }
-    } catch (e:Throwable) {
-
+        while (rs.next()) {
+            return rs.getString("valuef")
+        }
     }
-    return null;
+    throw Exception("can't find")
 }
 
 fun main(args: Array<String>) {
-    var port:Int = 5000
-    try{
+    var port: Int = 5000
+    try {
         port = Integer.valueOf(System.getenv("PORT"))
-    } catch(e:Exception) {
+    } catch(e: Exception) {
 
     }
     embeddedServer(Netty, port, reloadPackages = listOf("heroku"), module = Application::module).start()

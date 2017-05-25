@@ -57,7 +57,7 @@ fun Application.module() {
 
         get("/") {
             val model = HashMap<String, Any>()
-            if(getVar("status") == "working") {
+            if(true /*&& getVar("status") == "working"*/) {
                 model.put("image", "working.jpg")
                 model.put("button", "stop.png")
                 model.put("href", "stop")

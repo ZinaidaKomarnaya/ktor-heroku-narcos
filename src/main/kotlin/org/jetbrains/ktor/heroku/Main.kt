@@ -91,11 +91,13 @@ fun Application.module() {
         }
 
         get("init") {
+            val id:Int = 1
+            val value:String="please work 3"
             val model = HashMap<String, Any>()
             dataSource.connection.use { connection ->
                 val rs = connection.createStatement().run {
                     executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer, valuef text)")
-                    executeUpdate("UPDATE keyvalue SET valuef='please work' WHERE keyf = 1")
+                    executeUpdate("UPDATE keyvalue SET valuef='${value}' WHERE keyf=${id}")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
                     executeQuery("SELECT * FROM keyvalue")
                 }
@@ -114,7 +116,7 @@ fun Application.module() {
 fun setVar(key: Int, value: String) {
     dataSource.connection.use { connection ->
         connection.createStatement().run {
-            executeUpdate("UPDATE keyvalue SET valuef = '${value}' WHERE keyf = ${key}")
+            executeUpdate("UPDATE keyvalue SET valuef='${value}' WHERE keyf=${key}")
         }
     }
 }

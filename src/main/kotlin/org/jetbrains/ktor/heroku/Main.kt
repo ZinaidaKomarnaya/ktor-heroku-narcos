@@ -95,9 +95,9 @@ fun Application.module() {
 fun setVar(key:String, value:String) {
     dataSource.connection.use { connection ->
         connection.createStatement().run {
-            executeUpdate("DROP TABLE IF EXISTS vars")
-            executeUpdate("CREATE TABLE IF NOT EXISTS vars (ke text, va text)")
-            executeUpdate("INSERT INTO vars VALUES ('${key}','${value}')")
+            executeUpdate("DROP TABLE IF EXISTS key_value")
+            executeUpdate("CREATE TABLE key_value (ke text, va text)")
+            executeUpdate("INSERT INTO key_value VALUES ('${key}','${value}')")
         }
     }
 }
@@ -106,7 +106,7 @@ fun getVar(key:String):String? {
     try {
         dataSource.connection.use { connection ->
             val rs = connection.createStatement().run {
-                executeQuery("SELECT va FROM vars WHERE ke='${key}'")
+                executeQuery("SELECT * FROM key_value WHERE ke='${key}'")
             }
             while (rs.next()) {
                 return rs.getString("va")

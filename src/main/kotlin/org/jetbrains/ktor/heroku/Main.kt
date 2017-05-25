@@ -95,8 +95,8 @@ fun Application.module() {
             dataSource.connection.use { connection ->
                 val rs = connection.createStatement().run {
                     executeUpdate("CREATE TABLE IF NOT EXISTS keyvalue (keyf integer, valuef text)")
+                    executeUpdate("UPDATE keyvalue SET valuef='please work' WHERE keyf = 1")
                     executeUpdate("INSERT INTO keyvalue VALUES (1,'working')")
-                    executeUpdate("UPDATE keyvalue SET valuef='please'")
                     executeQuery("SELECT * FROM keyvalue")
                 }
                 val output = ArrayList<String>()

@@ -1,24 +1,28 @@
 package org.jetbrains.ktor.heroku
 
-import com.zaxxer.hikari.*
-import freemarker.cache.*
-import org.jetbrains.ktor.application.*
-import org.jetbrains.ktor.content.*
-import org.jetbrains.ktor.features.*
-import org.jetbrains.ktor.freemarker.*
-import org.jetbrains.ktor.host.*
-import org.jetbrains.ktor.http.*
-import org.jetbrains.ktor.netty.*
-import org.jetbrains.ktor.routing.*
-import java.util.*
-import kotlinx.html.*
-import kotlinx.html.dom.*
-import kotlinx.html.stream.appendHTML
-import org.jetbrains.ktor.logging.logInfo
-import org.jetbrains.ktor.request.host
-import org.jetbrains.ktor.request.userAgent
-import org.jetbrains.ktor.response.contentType
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import freemarker.cache.ClassTemplateLoader
+import org.jetbrains.ktor.application.Application
+import org.jetbrains.ktor.application.call
+import org.jetbrains.ktor.application.install
+import org.jetbrains.ktor.content.serveClasspathResources
+import org.jetbrains.ktor.features.ConditionalHeaders
+import org.jetbrains.ktor.features.DefaultHeaders
+import org.jetbrains.ktor.features.PartialContentSupport
+import org.jetbrains.ktor.features.StatusPages
+import org.jetbrains.ktor.freemarker.FreeMarker
+import org.jetbrains.ktor.freemarker.FreeMarkerContent
+import org.jetbrains.ktor.host.embeddedServer
+import org.jetbrains.ktor.http.ContentType
+import org.jetbrains.ktor.http.HttpStatusCode
+import org.jetbrains.ktor.http.withCharset
+import org.jetbrains.ktor.netty.Netty
 import org.jetbrains.ktor.response.header
+import org.jetbrains.ktor.response.respondRedirect
+import org.jetbrains.ktor.routing.Routing
+import org.jetbrains.ktor.routing.get
+import java.util.*
 
 val hikariConfig = HikariConfig().apply {
     jdbcUrl = System.getenv("JDBC_DATABASE_URL")
@@ -51,78 +55,66 @@ fun Application.module() {
     install(Routing) {
         serveClasspathResources("public")
 
-        get("hi") {
-            val html = StringBuilder().appendHTML(true).html {
-                head {
-                    title { +"title1" }
-                }
-                body {
-                    +"body3"
-                    p {
-                        val from = call.request.queryParameters.get("from")
-                        if(from != null) {
-                            +("from: " + from)
-                        }
-                    }
-                    p {
-                        +("agent: " + call.request.userAgent())
-                    }
-                    p {
-                        +("remoteHost: " + call.request.local.remoteHost)
-                    }
-                    p {
-                        +("host: " + call.request.local.host)
-                    }
-                    p {
-                        +("uri: " + call.request.local.uri)
-                    }
-                    p {
-                        +("scheme: " + call.request.local.scheme)
-                    }
-                }
-            }
-//            call.response.header("Content-Type", "text/html; charset=UTF-8")
-            call.response.header("my_header", "my_value")
-            call.response.status(HttpStatusCode.OK)
-            call.response.contentType(ContentType.Text.Html)
-            call.respond("<!DOCTYPE html>\n" + html.toString())
-        }
-
-        get("hello") {
-            call.respond("Hello World " + counter++)
-        }
-
-        get("error") {
-            throw IllegalStateException("An invalid place to be …")
-        }
-
         get("/") {
             val model = HashMap<String, Any>()
-            model.put("message", "Hello World!")
+            if(getVar("status") == "working") {
+                model.put("image", "working.jpg")
+                model.put("button", "stop.png")
+                model.put("href", "stop")
+            } else {
+                model.put("image", "stopped.jpg")
+                model.put("button", "start.png")
+                model.put("href", "start")
+            }
             val etag = model.toString().hashCode().toString()
+            call.response.header("Content-Type", "text/html; charset=UTF-8")
+            call.response.status(HttpStatusCode.OK)
             call.respond(FreeMarkerContent("index.ftl", model, etag, html_utf8))
         }
 
-        get("/db") {
-            val model = HashMap<String, Any>()
-            dataSource.connection.use { connection ->
-                val rs = connection.createStatement().run {
-                    executeUpdate("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)")
-                    executeUpdate("INSERT INTO ticks VALUES (now())")
-                    executeQuery("SELECT tick FROM ticks")
-                }
+        get("start") {
+            setVar("status", "working")
+            call.respondRedirect("/", true);
+        }
 
-                val output = ArrayList<String>()
-                while (rs.next()) {
-                    output.add("Read from DB: " + rs.getTimestamp("tick"))
-                }
-                model.put("results", output)
+        get("stop") {
+            setVar("status", "stopped")
+            call.respondRedirect("/", true);
+        }
+
+        get("status") {
+            if(getVar("status") == "working") {
+                call.respond("working")
+            } else {
+                call.respond("stopped")
             }
-
-            val etag = model.toString().hashCode().toString()
-            call.respond(FreeMarkerContent("db.ftl", model, etag, html_utf8))
         }
     }
+}
+
+fun setVar(key:String, value:String) {
+    dataSource.connection.use { connection ->
+        connection.createStatement().run {
+            executeUpdate("CREATE TABLE IF NOT EXISTS vars (ke text, va text)")
+            executeUpdate("UPDATE INTO vars VALUES WHERE ke='${key}' ('${key}','${value}')")
+        }
+    }
+}
+
+fun getVar(key:String):String? {
+    try {
+        dataSource.connection.use { connection ->
+            val rs = connection.createStatement().run {
+                executeQuery("SELECT va FROM vars WHERE ke='${key}'")
+            }
+            while (rs.next()) {
+                return rs.getString("va")
+            }
+        }
+    } catch (e:Throwable) {
+
+    }
+    return null;
 }
 
 fun main(args: Array<String>) {

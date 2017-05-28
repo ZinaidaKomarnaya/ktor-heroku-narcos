@@ -74,12 +74,12 @@ fun Application.module() {
 
         get("start") {
             setVar(1, "working")
-            call.respondRedirect("/");
+            call.respondRedirect("/?rand=${Math.random()}");
         }
 
         get("stop") {
             setVar(1, "stopped")
-            call.respondRedirect("/");
+            call.respondRedirect("/?rand=${Math.random()}");
         }
 
         get("status") {

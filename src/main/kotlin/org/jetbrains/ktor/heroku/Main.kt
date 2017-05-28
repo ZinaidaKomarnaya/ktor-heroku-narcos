@@ -60,11 +60,11 @@ fun Application.module() {
             if (getVar(1) == "working") {
                 model.put("image", "working.jpg")
                 model.put("button", "stop.png")
-                model.put("href", "stop")
+                model.put("href", "stop?rand=${Math.random()}")
             } else {
                 model.put("image", "stopped.jpg")
                 model.put("button", "start.png")
-                model.put("href", "start")
+                model.put("href", "start?rand=${Math.random()}")
             }
             val etag = model.toString().hashCode().toString()
             call.response.header("Content-Type", "text/html; charset=UTF-8")
